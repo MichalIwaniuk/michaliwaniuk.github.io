@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/wiecej.html">Rozwijaj się</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+<h1>Wpływ złożoności modelu CNN na metryki</h1>
+    
+<link rel="stylesheet" href="../css/exp.css">
+
+    <p>
+    W tym eksperymencie skupiamy się na porównaniu działania trzech modeli CNN o zróżnicowanej złożoności architektonicznej. Sprawdzimy
+    jaka poziom złożności modelu jest wystarczająca, aby uniknąć zjawiska overfittingu. W tym celu wybieramy dość dataset, który
+    zawiera bardzo zróznicowane obrazy róznych zwierząt (łącznie 10 klas: pies, koń, słoń, motyl, kura, kot, krowa, owca, wąż, wiewiórka). 
+    Trudno będzie osiągnąć wysokie accuracy na tak złożonym datasecie, ale dlatego nadaje się do tego porównania.
+    Porównamy trzy modele: bardzo prostą strukturę CNN, mały model inspirowany TinyVGG oraz MobileNetV2 (ale nie wstępnie przetrenowany).
+    Użyjemy kilku metryk. Oprócz accuracy, czyli procenta przepadków, w których model miał racje, użyjemy tych bardziej złożonych. 
+    </p>
+    <p> Będą one pokazywać jakość klasyfikacji bardziej szczegółowo niż accuracy </p>
+    </br>
+    <p>
+          <span class="highlight">"Precision" </span>dla danej klasy (np. kot) obliczamy przez podzielenie poprawnie określonych kotów przez poprawnie określonych kotów i
+      fałszywie określonych kotów. Obliczamy to dla każdej klasy.
+      "Macro precision" (które wyświetlamy) to średnia precyzja (suma precyzji na ilość klas). 
+    </p>
+    <p>
+      <span class="highlight">"Recall" </span> dla danej klasy (np. kot) obliczamy przez podzielenie poprawnie określonych kotów przez poprawnie określonych kotów i
+      fałszywie określonych niekotów (inne zwierze sklasyfikowane jako kot). Obliczamy to dla każdej klasy.
+      "Macro recall" (które wyświetlamy) to ponownie średni recall (suma recall na ilość klas). 
+    </p>
+  </br>
+    <p>
+      Mając zdefiniowane te dwie wielkości możemy obliczyć <span class="highlight">F1-score </span>, który zmierzy równowagę między trafnością a ostrożnością modelu. Mianowcie: jeśli 
+      mamu dużą precyzje i niski recall, to model trafia dobrze, ale rzadko. Natomiast duży recall i niska precyzja oznacza, że model łapie większość 
+      przypadków w danej klasie, ale często też fałszwie wskazuje tą klase. F1-score to podwojony iloczyn precision i recall podzielony przez
+      ich sumę.      
+    </p>
+    <p>
+      Poza tym podajemy rozmiar modelu, który jest bardzo istotny przy implementowaniu go w systemach oraz czas uczenia (bardzo istone
+      przy pracy z dużymi datasetami). Ciekawym parametrem jest również liczba parametrów, obliczana na podstawie struktury sieci.
+    </p>
+    
+
+
+    <br/>
+  <label for="modelSelect">Wybierz architekturę modelu:</label><br>
+  <select id="modelSelect">
+    <option value="simple">Prosty </option>
+    <option value="medium" selected>Średni TinyVGG</option>
+    <option value="complex">MobileNetV2</option>
+  </select>
+
+  <div id = "metrics_cm">
+    <div id="metricsBox">
+      <div class="metric"><span class="label">Accuracy:</span> <span id="accuracy" class="value">63%</span></div>
+      <div class="metric"><span class="label">Czas treningu:</span> <span id="time" class="value">837 s</span></div>
+      <div class="metric"><span class="label">Liczba parametrów:</span> <span id="params" class="value">2.4 mln</span></div>
+      <div class="metric"><span class="label">F1-score:</span> <span id="f1" class="value">0.59</span></div>
+      <div class="metric"><span class="label">Precision:</span> <span id="precision" class="value">0.62</span></div>
+      <div class="metric"><span class="label">Recall:</span> <span id="recall" class="value">0.57</span></div>
+      <div class="metric"><span class="label">Rozmiar modelu:</span> <span id="size" class="value">9.11 MB</span></div>
+    </div>
+
+    <div id="img_cont">
+      <img src="../images/cm_medium.png" alt="Macierz pomyłek" id="confMatrix">
+    </div>
+  </div>
+  <script src="../js/porownanie.js"></script>
+
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

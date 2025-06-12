@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/wiecej.html">Rozwijaj się</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+<h1>Eksperymentyd</h1>
+    <form action="/wizualizacja" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required><br>
+        <label for="layer">Wybierz warstwę konwolucyjną:</label>
+            <select name="layer" id="layer">
+            <option value="0">Conv1 (3 → 64)</option>
+            <option value="5">Conv2 (64 → 128)</option>
+            <option value="10">Conv3 (128 → 256)</option>
+            <option value="17">Conv4 (256 → 512)</option>
+            <option value="24">Conv5 (512 → 512)</option>
+            </select><br><br>
+        <input type="submit" value="Wyświetl">
+    </form>
+
+    <h2>Wizualizacja warstwy </h2>
+    <div class="grid">
+        
+    </div>
+
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

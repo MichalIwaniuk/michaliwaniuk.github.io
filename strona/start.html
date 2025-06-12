@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/wiecej.html">Rozwijaj się</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+<style>
+    .float-img {
+      float: left; /* lub right */
+      margin: 0 15px 15px 0; /* odstęp wokół obrazka */
+      width: 700px !important;
+      height: auto !important;
+    }
+    img {
+        border-radius: 12px;
+    }
+</style>
+            
+<h1>Jak rozpocząć</h1>
+<p>Sztuczna inteligencja to dziedzina informatyki, która zajmuje się tworzeniem systemów potrafiących 
+    symulować ludzką inteligencję — np. rozpoznawać obrazy, przetwarzać język naturalny, podejmować decyzje czy uczyć się na podstawie danych.</p>
+<p> Szczególnie ciekawym polem tej dziedziny są <span class="highlight">sieci neuronowe</span> (CNN - Convolutional Neural Network) oraz <span class="highlight">Deep Learning</span> (po polsku "Głębokie nauczanie").
+     Dzięki tym potężnym technologiom
+    można realizować projekty oparte na klasyfikacji obiektów, robotyce, detekcji obiektów, segmentowaniu obrazów czy rozpoznawaniu tekstu.  
+</p>
+
+<p>Najlepszym środowiskiem do rozpoczęcia przygody z modelami jest <span class="highlight">Google Colab</span> - darmowa platforma Google, która umożliwia pisanie kodu Python w chmurze,
+    bez szczególnego przystosowania i instalacji. Nie są to jednak jego największe plusy. </p>
+
+<p> Podczas trenowania modeli szczególnie ważnym dla nas czynnikiem jest moc obliczeniowa, ponieważ od niej zależy ilość danych, które model może przeanalizować. Każdy komputer ma 
+    komponenty odpowiedzialne za przetwarzanie danych - głównym jest <span class="highlight">CPU</span> (Central Processing Unit). Poza tym karty graficzne zawierają specjalistyczne procesory GPU 
+    (Graphics Processing Unit), które składają się z dużej ilości oddzielnych rdzeni potrzebnych do wykonania równoległych zadań. I tutaj ukazuje się 
+    największa zaleta Google Colab - możemy za darmo "pożyczyć" sobie kartę graficzną od Google i trenować tam nasze modele na <span class="highlight">GPU</span>. Poza tym Google Colab pozwala
+    nam na użycie <span class="highlight">Jupyter Notebook</span> wraz z większością potrzebnych bibliotek zainstalowanych  </p>
+
+<p> Mamy zatem gotowe środowisko. Pozostaje dobrać konkretną technologię, w której stworzymy model. Obecnie na rynku bibliotek i frameworków do Machine Learningu w Pythonie dominują dwie technologie: <span class="highlight">PyTorch i TensorFlow</span>.
+    Różnice pomiędzy nimi mają raczej charakter techniczny. PyTorch jest przystępny (bardziej "pythonowy"), oferuje 
+    łatwe debugowanie i intuicyjność. Służy on między innymi do pisania programów w Olimpiadzie Sztucznej Inteligencji. Natomiast TensorFlow oferuje prostsze wdrażanie i jest powszechnie używany w dużych, korporacyjnych projektach.
+    W naszych programach użyjemy obu technologii, aby pokazać ich możliwości i różnice. Poniższy wykres pokazuje pokazuje zainteresowanie
+    w czasie z Google Trends (niebieski to PyTorch, a czerwony to TensorFlow).
+
+      </p>
+    <img src="../images/trends1.png" class="float-img">
+<p> Teraz przechodzimy bezpośrednio do projektu, pierwszym wyzwaniem jest wybór zbioru danych. Ważne jest, aby zbiór danych był dostatecznie duży (docelowo
+    zazwyczaj jak największy, ale jednocześnie dostosowany do naszych możliwości) oraz odpowiednio zróżnicowany (aby uniknąć przeuczenia - overfittingu). 
+    Najlepszym źródłem zbiorów danych są portale <span class="highlight">Kaggle lub GitHub</span>.</p>
+
+<p>  Zaczynamy od wczytania danych do projektu w Google Colab, najskuteczniej jest je pobrać z Dysku Google po wcześniejszym załączeniu lub bezpośrednio
+     ze źródła (na przykład za pomocą Kaggle API).
+</p>
+    
+<p>
+    Musimy teraz podjąć kilka ważnych decyzji dotyczących projektu. Między innymi dobrać odpowiednią <span class="highlight">architekturę modelu</span>, warto pamiętać, że można skorzystać z modelu
+    wstępnie trenowanego, co polepszy jego działanie. Ważnym jest dobranie modelu o odpowiednio zaawansowanej architekturze w stosunku do zadania. Poza tym
+    często <span class="highlight">niewielkie zmiany hiperparametrów i dobranie funkcji optymalizującej czy funkcji straty</span> może mieć kluczowy wpływ na wydajność modelu.
+</p>
+
+<p>Ważne jest także, aby wspomnieć o najczęściej popełnianych błędach: </p>
+<p>
+    Z reguły większość errorów podczas kodowania AI są to errory związane
+    z nieodpowiednim shape tensorów (tensor - to macierz o o dowolnym wymiarze, a shape to wymiar tensora). Dlatego należy od początku próbować
+    zrozumieć matematykę związaną z programowaniem AI. Szczególnie istotnym działem w tej dziedzinie jest oczywiście <span class="highlight">algebra liniowa</span>, ale równie
+    często pojawiają się elementy <span class="highlight">analizy matematycznej</span>. 
+</p>
+<p>
+    Przede wszystkim: <span class="highlight">dane</span>. Zawsze przed wykonaniem projektu trzeba zapoznać się z datasetem, z którym mamy doczynienia. Jest kilka cech, które mogą być
+    kluczowe - ilość danych, ich zróżnicowanie (dla lepszej genralizacji) i zrównoważnie klas (być może niektórych jest więcej niż innych). Poza tym
+    negatywnie na działanie modelu może wpływać złe obrabianie danych przed wykonanie predykcji czy treningiem. 
+</p>
+
+<p>
+    Na tym polu najlepszą metodą nauki jest <span class="highlight">eksperymentowanie</span>. To właśnie powinno zawsze być związane z procesem nauki.
+</p>
+    
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>
