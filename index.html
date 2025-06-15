@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/main.css">  
+    <link rel="icon" href="Nlogo1.ico">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="content">
+        <main>
+            
+<style>
+
+    footer {
+        display: none;
+    }
+
+    html, body {
+        overflow: hidden;
+        height: 100%;
+    }
+    .console {
+      width: 90%;
+      max-width: 600px;
+      font-size: 40px;
+      padding: 20px;
+      border-left: 2px solid #00FF41;
+      white-space: pre-wrap;
+      overflow: hidden;
+      animation: blink 0.8s step-start infinite;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    @keyframes blink {
+      50% {
+        border-color: transparent;
+      }
+    }
+</style>
+
+
+
+<div class="matrix" id="matrix"></div>
+
+<a href="strona/start.html"> 
+    <div class="console" id="console"></div>
+</a>
+
+
+<script>
+        const text = `Sztuczna Inteligencja czeka za tym tekstem...\nKliknij tutaj...`;
+        const el = document.getElementById("console");
+        let index = 0;
+
+        function type() {
+                if (index < text.length) {
+                el.innerHTML += text.charAt(index) === "\n" ? "<br>" : text.charAt(index);
+                index++;
+                setTimeout(type, 80); 
+                }
+        }
+
+        type();
+        const matrix = document.getElementById('matrix');
+        const cols = Math.floor(window.innerWidth / 20);
+        const symbols = ['0', '1'];
+
+        for (let i = 0; i < cols; i++) {
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.style.left = `${i * 20}px`;
+        column.style.animationDuration = `${6 + Math.random() * 6}s`;
+        
+        for (let j = 0; j < 30; j++) {
+        const span = document.createElement('span');
+        span.className = 'digit'; 
+        span.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        column.appendChild(span);
+        column.appendChild(document.createElement('br'));
+        }
+
+        matrix.appendChild(column);
+        }
+
+        document.getElementById('start-link').addEventListener('click', function() {
+        window.location.href = 'index.html';
+        })
+</script>
+  
+
+
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja. Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

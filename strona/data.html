@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+
+<div class="matrix" id="matrix"></div>
+            
+<h1>Zbiory danych</h1>
+<p>
+    Do projektu "Czerniak" wykorzystano: <a href="https://www.kaggle.com/datasets/fanconic/skin-cancer-malignant-vs-benign" target="_blank">Kaggle Skin Cancer Detection </a>
+</p>
+
+<p>
+    Do projektu "Instrumenty" wykorzystano: <a href="https://zenodo.org/records/1290750" target="_blank">IRMAS dataset</a>
+</p>
+
+<p>
+    Do projektu "Model językowy" wykorzystano: <a href="https://www.gutenberg.org/" target="_blank">gutenberg.org</a>
+<br/>
+    Poza tym inspiracja absolutnie klasyczną publikacją: <a href="https://proceedings.neurips.cc/paper_files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf" target="_blank">
+        Attention Is All You Need</a>
+</p>
+<br/>
+<p>
+    Zapraszamy także do <a href="https://github.com/MichalIwaniuk/SztucznaIntuicjaMaterialy">repozytorium z kodem i materiałami naszych modeli</a>  (między innymi tok trenowania)
+</p>
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+  <script>
+     
+        const matrix = document.getElementById('matrix');
+        const cols = Math.floor(window.innerWidth / 20);
+        const symbols = ['0', '1'];
+
+        for (let i = 0; i < cols; i++) {
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.style.left = `${i * 20}px`;
+        column.style.animationDuration = `${6 + Math.random() * 6}s`;
+        
+        for (let j = 0; j < 30; j++) {
+        const span = document.createElement('span');
+        span.className = 'digit'; 
+        span.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        column.appendChild(span);
+        column.appendChild(document.createElement('br'));
+        }
+
+        matrix.appendChild(column);
+        }
+
+        document.getElementById('start-link').addEventListener('click', function() {
+        window.location.href = 'base.html';
+        })
+</script>           
+
+</body>
+</html>

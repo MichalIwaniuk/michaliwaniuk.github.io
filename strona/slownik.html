@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+<h1>Zapoznaj się z najważniejszymi pojęciami</h1>
+    <style>
+        .card {
+            background: #1f1f1f;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 0 15px rgba(0,255,0,0.2);
+            transition: transform 0.3s ease;
+            }
+            
+    </style>
+
+    <div class="card">
+    <h2>Augmentacja </h2>  
+    <p>
+        - sztuczne rozszerzanie zbioru danych poprzez dodawanie różnorodności, ale dalsze zachowanie klasy. Pomaga to modelowi generalizować.
+     </p> 
+    </div>
+
+    <div class="card">
+    <h2>Batch </h2>  
+    <p>
+        - podzbiór danych treningowych przetwarzany w jednym kroku uczenia. "Batch_size" to ważny hiperparametr, ponieważ
+        wpływa na szybkość trenowania i zużycie pamięci.
+    </p>
+    </div>
+    <div class="card">
+
+    <h2>Bias</h2>  
+    <p>
+        - stała wartość dodawana do wyniku operacji przed zastosowaniem funkcji aktywacji.
+    </p>    
+    </div>
+
+    <div class="card">
+    <h2>Dokładność (Accuracy) </h2>  
+    <p>
+        - procent poprawnych przewidywań, jeśli zajmujemy się problemem klasyfikacji.
+    </p>
+    </div>
+
+    <div class="card">
+    <h2>Dropout </h2>  
+    <p>
+        - to losowe „wyłączanie” neuronów podczas treningu.
+     </p>
+    </div>
+
+    <div class="card">
+    <h2>Epoka</h2>  
+    <p>
+        - pełne przejście modelu przez cały zbiór danych.
+     </p>
+    </div>
+
+    <div class="card">
+    <h2>Funkcja aktywacji </h2>  
+    <p>
+        - funkcja przyjmująca zsumowane wagi i biasy, dodająca nieliniowość do modelu.
+    </p>
+    </div>
+
+    <div class="card">
+     <h2>Gradient </h2>  
+    <p>
+        - to wektor wielu pochodnych - pochodnych cząstkowych funkcji straty. Intuicyjne mówiąc jest to struktura, która wskazuje
+        jak zmieniać parametry modelu, aby zmniejszyć wartość funkcji straty.
+     </p>
+    </div>
+
+    <div class="card">
+    <h2>Learning Rate</h2>  
+    <p>
+        - hiperparametr (wybierany przez procesem uczenia, choć w niektórych pętlach treningowych jest zmieniany dynamicznie) określający jak duży "krok" jest wykonywany 
+        przy aktualizacji parametrów. Za duża wartość LR skutkuje niestabilnym uczeniem ("przeskakujemy" najlepsze wartości parametrów), a za mała wartość skutkuje
+        zbyt wolnym uczeniem. 
+     </p> 
+    </div>
+
+    <div class="card">
+    <h2>Momentum</h2>  
+    <p>
+        - to technika często stosowana w optymalizatorach, która polega na uwzględnianiu poprzednich kierunków zmian wag przy aktualizacji ich wartości. 
+        Dzięki temu model może uniknąć utknięcia w lokalnych minimach funkcji straty oraz szybciej zbiegać do minimum globalnego.
+     </p>
+    </div>
+
+    <div class="card">
+    <h2>Neuron</h2>  
+    <p>
+        - to podstawowy element sieci, przetwarza dane i przekazuje sygnał dalej.
+     </p>
+    </div>
+
+    <div class="card">
+    <h2>Niedouczenie  (underfitting)</h2>  
+    <p>
+        - jest to sytuacja, kiedy model ze względu na zbyt prostą strukturę nie jest w stanie wychwycić zależności między
+         danymi. W takiej sytuacji model jest nieskuteczny zarówno na danych treningowych jak i innych.
+     </p>
+    </div>
+    
+
+    <div class="card">
+    <h2>Precyzja (w klasyfikacji binarnej)</h2>  
+    <p>
+        - metryka poprawności działania modelu. Jest to ilość przypadków pozytywnie prawdziwych podzielona
+        na liczbę sumę przypadków prawdziwe pozytywnych i fałszywie pozytywnych.
+    </p>
+    </div>
+
+    <div class="card">
+    <h2>Przeuczenie (overfitting)</h2>  
+    <p>
+        - jest to sytuacja, kiedy model zbyt mocno "przywiązuje" się do danych
+        treninowych, przez co osiąga większe accuracy na zbiorze treningowym niż walidacyjnym. W takiej sytuacji model 
+        jest nieskuteczny na danych, których wcześniej nie widział.
+     </p>
+    </div>
+
+    <div class="card">
+    <h2>Sieć typu Feed-Forward</h2>  
+    <p>
+        - sieć, gdzie dane przepływają tylko w jednym kierunku.
+    </p>
+    </div>
+
+        <div class="card">
+    <h2>Token</h2>  
+    <p>
+        - jednostka tekstu, którą widzi model. 
+    </p>
+    </div>
+
+    <div class="card">
+    <h2>Tokenizator</h2>  
+    <p>
+        - narzędzie, które dzieli tekst na mniejsze jednostki. Obecnie najpopularniejsze tokenizatory to te oparte 
+        na podjednostkach słów.
+    </p>
+    </div>    
+
+    <div class="card">
+    <h2>Transfer Learning </h2>  
+    <p>
+        - technika polegająca na trenowaniu modelu wstępnie przetrenowanego (na bardzo dużym zbiorze danych) i 
+        wykorzystaniu go do pokrewnego zadania.
+    </p>
+    </div>
+
+    <div class="card">
+    <h2>Trening</h2>  
+    <p>   - proces poprawiania parametrów modelu.</p>
+    </div>
+
+    <div class="card">
+     <h2>Walidacja</h2>  
+     <p> - proces sprawdzania skuteczności (generalizacji) modelu na danych spoza zbioru treningowego.</p>
+    </div>
+    
+    </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

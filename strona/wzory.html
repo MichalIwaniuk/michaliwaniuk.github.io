@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+<style>
+    .controls {
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      background-color: #ffffff;
+      border: 1px solid #ccc;
+    }
+
+    #loss {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+    <h1>Opytmalizatory i funkcje straty</h1>
+    <h2>Loss functions</h2>
+    <p>W sieciach neuronowych <span class="highlight">funkcja straty i optymalizator</span> odgrywają kluczowe role w procesie uczenia się modelu, ich zmiana może przynieść
+    zaskakujące wyniki. Funkcja straty mierzy jak mocno wyniki naszego modelu różnią się od tych oczekiwanych. Umożliwia to określenie strony, w którą
+        należy poprawiać parametry, aby osiągać lepsze rezultaty. W poniższych wzorach <span class="highlight">y oznacza prawdziwą wartość, natomiast \( \hat{y} \) to wynik modelu</span>.
+     Warto zapoznać się z najpopularniejszymi funkcjami straty (loss functions):
+    <h3>Cross Entropy Loss</h3>
+<span class="highlight">\[ \mathcal{L} = - \sum_{i=1}^{C} y_i \cdot \log(\hat{y}_i) \]</span>
+<p>
+    Powyższy wzór to minus suma po liczbach całkowitych od 1 do ilości klas. Pod sumą mamy iloczyn prawdziwej wartości i logarytm dziesiętny z predykcji modelu.
+</p>
+<h3>Mean Squared Error (MSE) - po prostu wariancja</h3>
+<span class="highlight">\[ \mathcal{L} = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2 \]</span>
+<p>
+    Tutaj mamy klasyczną miarę znaną ze statystyki. To suma kwadratów różnic rzeczywistych wartości i tych przewidywanych przez model. 
+    Bardzo proste, bardzo skuteczne.
+</p>
+
+<h3>Binary Cross Entropy</h3>
+<span class="highlight">\[ \mathcal{L} = - \left( y \cdot \log(\hat{y}) + (1 - y) \cdot \log(1 - \hat{y}) \right) \]</span>
+<p>
+    \( \hat{y} \) to prawdopobieństwo określone przez model, a y to 0 lub 1. Ta funkcja może też być użyta
+    do wyzwań multi-label classification, takich jak nasz projekt "Instrumenty".
+</p>
+
+<br/>
+<br/>
+    <h2>Optimizers</h2>
+    
+
+    <p>
+        Optymalizator natomiast na podstawie <span class="highlight">gradientów</span> (pochodnych funkcji straty względem wag) aktualizuje wagi sieci, by zminimalizować wartość straty. 
+    </p>
+        <h3>Adam (Adaptive Moment Estimation)</h3>
+  
+  <p>
+      to optymalizator, który <span class="highlight">automatycznie</span> dopasowuje tempo uczenia się dla każdego parametru. 
+      Dzięki temu uczy się szybciej i stabilniej, bez potrzeby ręcznego ustawiania wielu parametrów.
+  </p>
+  <h3>SGD</h3>
+  <p>
+     to prosty optymalizator, który aktualizuje parametry modelu, przesuwając 
+    je w kierunku <span class="highlight">przeciwnym do gradientu</span> błędu na podstawie losowo wybranego przykładu lub małej partii danych. 
+  </p>
+  <h3>Momentum</h3>
+  <p>
+    nie jest to optymalizator tylko technika przyspieszająca uczenie w optymalizacji, 
+    która dodaje do aktualizacji parametrów <span class="highlight">„pęd”</span> – czyli uwzględnia nie tylko bieżący gradient, ale też poprzednie kroki. 
+  </p>
+
+  <h1>Porównanie optymalizatorów</h1>
+  Sprawdzimy teraz jak w praktyce działają optymalizatory. Wybieramy funkcje straty: \[ \ x^2+y^2 \]
+   Na początku losujemy
+  punkt o współrzędnych w przedziale [-2,2]. Zadaniem naszego optymalizatora będzie (jak zawsze) zminiamlizowanie straty, czyli
+  w tym przypadku dojście do punktu (0,0). Porównamy trzy: dość skomplikowany Adam, SGD i SGD z zastosowaniem Momentum. Narysowana krzywa
+  pokazuje jak optymalizator po kolei dążył do osiągnięcia minimum w tym bardzo prostym zadaniu.
+  <br/>
+  <div class="controls">
+    <label for="optimizer">Wybierz optymalizator:</label>
+    <select id="optimizer">
+      <option value="sgd">SGD</option>
+      <option value="momentum">SGD z Momentum</option>
+      <option value="adam">Adam</option>
+    </select>
+    <label for="steps">Liczba kroków:</label>
+    <input type="number" id="steps" value="50" min="10" max="200">
+    <button onclick="start()">Start</button>
+  </div>
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <div id="loss">Loss: </div>
+
+<script src="../js/optApp.js"></script>
+    
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+</body>
+</html>
