@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  
+<h1>Czerniak</h1>
+ <a href="https://huggingface.co/spaces/MichalIwaniuk/ModelCzerniak" target="_blank">TU JEST APLIKACJA</a>
+ <br/>
+ <br/>
+   <p> 
+    Rak skóry to złośliwy nowotwór rozwijający się z patologicznych komórek skóry, najczęściej wywołany przez promieniowanie UV.
+     Jego objawy można ocenić regułą ABCDE (asymetria, brzegi nieregularne, kolor (colour) niejednolity,
+    duża średnica, ewolucja/zmiana w czasie). Kluczowe dla wyleczenia jest wczesne wykrycie na podstawie nietypowych zmian skórnych, 
+        diagnozowane dermatoskopią i badaniem histopatologicznym. Leczenie opiera się głównie na chirurgicznym usunięciu, czasem wspartym radioterapią,
+        chemioterapią, immunoterapią lub terapią celowaną. 
+   </p>
+   <p>
+    Wytrenujemy zatem <span class="highlight">model ResNet18</span>, który będzie oceniać jaka zmiana skórna znajduje się na zdjęciu. 
+    Będziemy wybierać jedną z dwóch klas: 'benign' (nieszkodliwa zmiana) lub 'malignant' (być może nowotwór).
+   </p>
+    <br/>
+    <p>Najpierw zajmujemy się pobraniem danych, metod jest wiele, my pobieramy z dysku Google (mamy już przygotowany zip pobrany z Kaggle).</p>
+
+<pre class="code-box"><code>
+from google.colab import drive
+drive.mount('/content/drive')
+
+!mkdir -p /content/Dane
+!unzip "/content/drive/My Drive/czerniakData.zip" -d "/content/Dane"
+</code></pre>
+
+Importujemy biblioteki 
+<pre class="code-box"><code>
+from __future__ import print_function, division
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.optim import lr_scheduler
+import numpy as np
+import torchvision
+from torchvision import datasets, models, transforms
+import matplotlib.pyplot as plt
+import time
+import os
+import copy
+import torchvision.transforms as transforms
+import torchvision.datasets as dset
+import torchvision.transforms as transforms
+</code></pre>
+Piszemy tak zwany <span class="highlight">"device agnostic code"</span>. Jeśli jest dostępne GPU - używamy go, aby mieć większą moc obliczeniową. Jeśli natomiast
+nie, używamy CPU. Dzięki temu nasz kod działa niezależnie od typu sprzętu, na którym jest uruchamiany. 
+<pre class="code-box"><code>
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+</code></pre>
+
+<br/>
+Tworzymy dwie <span class="highlight">transformacje</span> - jedną dla zbioru treningowego, a drugą dla zbioru walidacyjnego. 
+Pierwsza z nich wycina centralną część zdjęcia, dodaje augmentacje (ewentualne obrócenie - domyślnie prawdopodobieństwo to 0.5, czyli 50%) i
+ zmienia je na tensor. Druga natomiast zmienia jego rozmiar oraz przycina, nie występują tam jednak augmentacje, 
+ ponieważ przy walidacji nie są potrzebne. Ostatnim etapem obu transformacji jest <span class="highlight">normalizacja</span>, czyli operacja przekształcająca wartość 
+ pikseli, aby miały wartości w określonym przedziale. Używamy dokładnie takiej normalizacji, na której wstępnie trenowany był model.
+<pre class="code-box"><code>
+TrainTransform = transforms.Compose([
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+
+ValTransform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+</code></pre>
+
+
+Ponieważ nasze dane są w dwóch folderach "train" i "test", od razu tworzymy dwa datasety i wykonujemy na nich
+odpowiednie transformacje. Tworzymy także "dataloadery" - ponownie z podziałem na treningowy i walidacyjny. Pierwszy parametr
+treningowego dataloadera to <span class="highlight">zbiór danych</span> , drugi to <span class="highlight">batch_size</span> (porcje, na które dzielimy zdjęcia zbioru; model przetwarza
+cały batch informacji na raz, dzięki czemu proces jest szybszy). Trzeci parametr określa, czy "tasujemy" (mieszamy) dane, co jest 
+bardzo ważne dla uogólnienia modelu. Ostatni parametr <span class="highlight">"num_workers"</span> określa, ile wątków jest wykorzystywanych do ładowania
+danych. Warto sprawdzić także rozmiar zbioru walidacyjnego i treningowego, zazwyczaj ilość próbek w zbiorze walidacyjnym
+to od 5% do 25% całych danych.
+
+<pre class="code-box"><code>
+data_dir = '/content/Dane/data'
+
+trainDataset = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'train'), TrainTransform)
+valDataset = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'test'), ValTransform)
+
+trainDataLoader = torch.utils.data.DataLoader(trainDataset, batch_size = 4, shuffle=True, num_workers=2)
+valDataLoader = torch.utils.data.DataLoader(valDataset, batch_size = 4, shuffle=True, num_workers=2)
+
+len(trainDataset), len(valDataset)
+</code></pre>
+
+
+Teraz sprawdzamy, z jakich klas składa się dataset, w naszym przypadku to <span class="highlight">['benign', 'malignant']</span>. "Benign" to łagodna zmiana skórna,
+natomiast "malignant" to potencjalna zmiana nowotworowa. 
+<pre class="code-box"><code>
+class_names = trainDataset.classes
+class_names
+</code></pre>
+
+Przed rozpoczęciem właściwego treningu warto zajrzeć do danych. Przygotowujemy funkcję "imshow", która zamienia tensory na
+tablice numpy i wyświetla je za pomocą matplotlib.
+<pre class="code-box"><code>
+def imshow(inp, title=None):
+    inp = inp.cpu().numpy().transpose((1, 2, 0))
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+    inp = std * inp + mean
+    inp = np.clip(inp, 0, 1)
+    plt.imshow(inp)
+    if title is not None:
+        plt.title(title)
+    plt.pause(0.001)
+
+</code></pre>
+
+
+Nareszcie przechodzimy do pętli (funkcji), gdzie będziemy trenować nasz model. Funkcja train_model przyjmuje 5 parametrów -<span class="highlight">
+model, który obecnie trenujemy, funkcję loss, funkcję optymalizującą, "scheduler" (do zmieniania learning rate) oraz liczbę epok (ilość przejść przez dane)</span>.
+Zapisujemy sobie czas, aby sprawdzić, jak długo trwa proces uczenia. Jako najlepszy model zapisujemy obecny stan niewytrenowanego modelu, 
+a jako najwyższą trafność (accuracy) przypisujemy 0.0.
+
+<pre class="code-box"><code>
+def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
+    czasPoczatkowy = time.time()
+    najlepszyModel = copy.deepcopy(model.state_dict())
+    najwyzszaAccuracy = 0.0
+</code></pre>
+
+Właściwą pętlę rozpoczynamy przełączenia modelu w   <span class="highlight">tryb trenowania</span> za pomocą "model.train()" Zmienna "obecnyLoss" będzie przechowywać 
+wartość funkcji <span class="highlight">straty (loss)</span>, 
+którą chcemy minimalizować. Natomiast "dobrzeOkreslone" oznacza liczbę poprawnie ocenionych przypadków zmian skórnych przez sieć. Następnie za pomocą
+pętli "for" rozkładamy "trainDataLoader" na obraz oraz jego opis (etykietę - "benign" lub "malignant") i przenosimy je na odpowiednie urządzenie (device). 
+Następnie <span class="highlight">zerujemy gradienty</span>, aby nie sumowały się z poprzednich iteracji i nie prowadziły do błędów w optymalizacji.
+
+<pre class="code-box"><code>
+    for epoch in range(num_epochs):
+            print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+            print('-' * 10)
+
+            #trenowanie
+            model.train()
+
+            obecnyLoss = 0.0
+            dobrzeOkreslone = 0
+
+            for obraz, opis in trainDataLoader:
+                obraz = obraz.to(device)
+                opis = opis.to(device)
+
+                optimizer.zero_grad()
+
+</code></pre>
+
+<p>Jak zawsze podczas treningu (przy włączonych gradientach), zamierzamy zmieniać wagi modelu. Następnie przekazujemy obraz jako tensor przez
+wszystkie warstwy naszej sieci, wynikiem są <span class="highlight">dane surowe (logits)</span>. Funkcja "torch.max()" z parametrem "dim=1" zwraca dwa tensory: pierwszy zawiera maksymalne
+wartości, a drugi - indeksy tych wartościl; nas interesują tylko indeksy. Następnie definiujemy funkcję straty, która będzie mierzyć różnicę między 
+przewidywaniami modelu a prawdziwymi etykietami. </p>
+<p>Następnie kluczowy moment w procesie uczenia: "loss.backward()" <span class="highlight">oblicza gradienty (pochodne cząstkowe)</span> funkcji straty względem wszystkich
+    parametrów modelu. Później używamy <span class="highlight">optymalizatora</span>. Obliczamy także loss i ilość dobrze wykonanych predykcji.</p>
+<pre class="code-box"><code>
+                with torch.set_grad_enabled(True):
+                    wynik = model(obraz)
+                    _, predykcja = torch.max(wynik, dim=1)
+                    loss = criterion(wynik, opis)          
+                        
+                    loss.backward()
+                    optimizer.step()
+                obecnyLoss += loss.item() * obraz.size(0)
+                dobrzeOkreslone += torch.sum(predykcja == opis.data)
+</code></pre>
+
+Wywołanie funkcji "scheduler.step()" działa w połączeniu z optymalizatorem i powoduje <span class="highlight">zmianę learning rate</span> , jeśli nie ma poprawy podczas trenowania.
+Obliczamy średni loss na jedną epokę i średnie accuracy, aby ocenić postęp modelu. Co epokę wyświetlamy te wartości. 
+<pre class="code-box"><code>
+            scheduler.step()
+
+            epokaLoss = obecnyLoss / len(trainDataset)
+            epokaAcc = dobrzeOkreslone.double() / len(trainDataset)
+
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+                'treningowa', epokaLoss, epokaAcc))
+</code></pre>
+Teraz przechodzimy do etapu walidacji. Po przełączeniu modelu w tryb walidacji zerujemy "obecnyLoss" i "dobrzeOkreslone". Działamy podobnie
+jak podczas treningu, zmieniając device "obraz" i "opis" oraz zerując gradienty. Tym razem jednak <span class="highlight">wyłączamy gradienty</span>, co zmniejsza
+użycie pamięci i przyśpiesza obliczenia. Dalej postępujemy analogicznie, z tą różnicą, że jeśli osiągnięte w tej iteracji accuracy
+jest największe, zapisujemy stan modelu.
+        
+<pre class="code-box"><code>
+            model.eval()
+
+            obecnyLoss = 0.0
+            dobrzeOkreslone = 0
+
+            for obraz, opis in valDataLoader:
+                obraz = obraz.to(device)
+                opis = opis.to(device)
+
+                optimizer.zero_grad()
+
+                with torch.set_grad_enabled(False):
+                    wynik = model(obraz)
+                    _, predykcja = torch.max(wynik, 1)
+                    loss = criterion(wynik, opis)
+
+                obecnyLoss += loss.item() * obraz.size(0)
+                dobrzeOkreslone += torch.sum(predykcja == opis.data)
+
+            epokaLoss = obecnyLoss / len(valDataset)
+            epokaAcc = dobrzeOkreslone.double() / len(valDataset)
+
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+                    'walidacyjna', epokaLoss, epokaAcc))
+
+            if epokaAcc > najwyzszaAccuracy:
+                najwyzszaAccuracy = epokaAcc
+                najlepszyModel = copy.deepcopy(model.state_dict())
+
+            print()
+</code></pre>
+
+Poza pętlą treningową sprawdzamy czas trwania treningu i zwracamy model o  <span class="highlight">najlepszej accuracy walidacyjnej</span>,
+ponieważ najbardziej zależy nam na skuteczności na danych, których model wcześniej nie widział.
+<pre class="code-box"><code>
+        calkowityCzas = time.time() - czasPoczatkowy
+        print('Training zajął {:.0f}m {:.0f}s'.format(
+        calkowityCzas // 60, calkowityCzas % 60))
+        print('Najlepsza walidacyjna accuracy: {:4f}'.format(najwyzszaAccuracy))
+
+        model.load_state_dict(najlepszyModel)
+        return model
+</code></pre>
+
+<p>Z pakietu torchvision.models pobieramy wstępnie trenowany model ResNet18("weights=True", czyli model wraz z wcześniej nauczonymi wagami). 
+Nazywamy to <span class="highlight">transfer learningiem </span> - wykorzystujemy już cechy wyuczone przez model ResNet18 na zbiorze danych ImageNet. Następne
+dwie linijki dodają <span class="highlight">nową warstwę</span> do modelu - w naszym przypadku ma on zwracać jedną z dwóch możliwych klas, a nie tak jak
+podczas wstępnego uczenia ResNet18 1000. Po zmianie device "model_ft" definiujemy funkcję straty jako "CrossEntropyLoss" z modułu
+torch.nn i optymalizator jako <span class="highlight">"SGD"</span>(określając przy tym jakie parametry ma optymalizować ta funkcja, wstępnie przyjmujemy <span class="highlight">"learning rate"</span> jako 0.001 i 
+<span class="highlight">"momentum"</span> jako 0.9, optymalną wartość do uwzględnienia "pędu" w aktualizacji wag). </p>
+
+<p> Na końcu definiujemy jeszcze "exp_lr_scheduler". Z podmodułu lr_scheduler wykorzystujemy klase StepLR 
+    podając wartości trzech parametrów: wcześniej zdefiniowany optymalizator, "step_size" (określa co ile epok
+    <span class="highlight">aktualizujemy Learning Rate</span>), gamma natomiast to wartość razy jaką mnożymy LR przy aktualizacji. 
+</p>
+
+<pre class="code-box"><code>
+model_ft = models.resnet18(weights=True)
+num_ftrs = model_ft.fc.in_features
+model_ft.fc = nn.Linear(num_ftrs, 2)
+
+model_ft = model_ft.to(device)
+
+criterion = nn.CrossEntropyLoss()
+
+optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)         
+</code></pre>
+
+Wreszcie wywołujemy funkcję treningową! Wykonujemy 15 epok.
+<pre class="code-box"><code>
+model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=15)
+</code></pre>
+
+Zapisujemy model. Precyzyjniej mówiąc: <span class="highlight">zapisujemy stan modelu</span> (słownik przechowujący jego stan), a nie sam obiekt. Przy
+wczytywaniu zatem najpierw trzeba będzie utworzyć obiekt, a potem wczytać wagi naszego przetrenowanego modelu.
+<pre class="code-box"><code>
+torch.save(model_ft.state_dict(), 'modelResNetCzerniak.pth')
+print("Model został zapisany!")  
+</code></pre>
+Model jest już gotowy, ale warto jeszcze wykorzystać zasoby biblioteki sklearn, aby sprawdzić jak działa.
+Ponownie przechodzimy przez dane walidacyjne, a wyniki działania modelu dodajemy do listy. Na tej podstawie 
+tworzymy <span class="highlight">confusion_matrix</span> (macierz pomyłek), którą następnie wyświetlamy.
+<pre class="code-box"><code>
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+model_ft.eval()
+WszyscyPredykcje = []
+WszystkieOpisy = []
+
+with torch.no_grad():
+    for obrazy, opisy in valDataLoader:
+        obrazy = obrazy.to(device)
+        opisy = opisy.to(device)
+        wynik = model_ft(obrazy)
+        _, predykcja = torch.max(wynik, 1)
+        WszyscyPredykcje.extend(predykcja.cpu().numpy())
+        WszystkieOpisy.extend(opisy.cpu().numpy())
+
+# Obliczamy macierz pomyłek
+cm = confusion_matrix(WszystkieOpisy, WszyscyPredykcje)
+
+
+# Wyświetlamy macierz pomyłek
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['benign', 'malignant'])
+disp.plot(cmap=plt.cm.Blues)
+plt.title("Macierz pomyłek")
+plt.show()           
+</code></pre>
+<span class="highlight">Model osiągnął całkiem zadowalające accuracy (jak i inne metryki), jednak warto pamiętać, że 
+rozpoznawanie zmian skórnych to bardzo skomplikowane zagadnienie i absolutnie nie zastępuje
+on konsultacji lekarskiej. Chociaż może być pewną wskazówką :)</span>
+
+
+
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

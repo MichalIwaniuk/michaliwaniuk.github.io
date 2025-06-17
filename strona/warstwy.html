@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+<h1>Jak działają warstwy</h1>
+<style>
+        
+        #kontener-nn {
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            padding: 20px;
+            position: relative; 
+        }
+
+        svg {
+            display: block;
+            margin: auto;
+        }
+
+        .neuron {
+            fill: #99ccff; 
+            stroke: #336699;
+            stroke-width: 2px;
+            transition: fill 0.3s ease-out; 
+        }
+
+        .neuron.aktywny {
+            fill: #ffcc66; 
+        }
+
+        .polaczenie {
+            stroke: #aaaaaa;
+            stroke-width: 1px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+        .legenda {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+            text-align: center;
+        }
+        .legenda div {
+            display: inline-block;
+            margin: 0 10px;
+        }
+        .kolor-legendy {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        .legenda-neuron-nieaktywny { background-color: #99ccff; }
+        .legenda-neuron-aktywny { background-color: #ffcc66; }
+        
+    </style>
+</head>
+<body>
+    <h1>Wizualizacja Przepływu Danych w Sieci Neuronowej</h1>
+
+    <p> 
+        Wszystkie wielkie sieci neuronowe, które postrzegamy jako jedne z największych
+        wynalazków ostatnich lat, nie różnią się fundementalnie koncepcyjnie od tych prostych.
+        Podstawową jednostką takiej struktury jest <span class="highlight">neuron</span> (perceptron). W każym pojedyńczym neuronie
+        dzieją się po prostu operacje matematyczne, na danych, które otrzymał z poprzedniej
+        warstwy. Precyzyjniej: najpierw mnożymy wejście przez odpowiadającą mu <span class="highlight">wagę</span>, potem obliczamy
+        sumę ważoną i <span class="highlight">dodajemy bias</span>. Poniższa ilustracja pokazuje sieć neuronową składającą się z 
+        warstwy wejściowej (3 neurony), warstwy ukrytej (dwie warstwy po 4 neurony) oraz warstwy 
+        wyjściowej (2 neurony). Każde połączenie oznacza jedną wagę.
+    </p>
+
+    <div id="kontener-nn">
+        <svg id="siec-svg" width="800" height="300" viewBox="0 0 800 300"></svg>
+    </div>
+
+    <button id="przycisk-start">Uruchom Przepływ Danych</button>
+
+    <div class="legenda">
+        <div>
+            <span class="kolor-legendy legenda-neuron-nieaktywny"></span> Neuron (nieaktywny)
+        </div>
+        <div>
+            <span class="kolor-legendy legenda-neuron-aktywny"></span> Neuron (aktywny)
+        </div>
+    </div>
+
+    <script src="../js/animacja.js"></script>
+
+
+    <p> 
+        Najpierw warstwa wejściowa przyjmuje surowe dane i przekazuje swoje aktywacje do pierwszej
+        warstwy ukrytej. Następnie neurony w pierwszej wartstwie ukrytej obliczają sumę ważoną tego wejścia 
+        (dodają też bias) i wykonują na nim funkcję aktywacji. Potem w każdej warstwie ukrytej(w naszym przypadku tylko drugiej, bo
+        nie ma więcej) jest powtarzana ta procedura <span class="highlight">(suma ważona+bias, wykonanie funkcji aktywacji)</span>. 
+        
+        Interesujące rzeczy dzieją się również w warstwie wyjściowej (czyli ostatniej). Oprócz standardowego obliczenia sumy ważonej, 
+        stosujemy tam funkcję aktywacji dostosowaną do konkretnego zadania, tak aby uzyskać odpowiednie dane na wyjściu.
+    </p>
+
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

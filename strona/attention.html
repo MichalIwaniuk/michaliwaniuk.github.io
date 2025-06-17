@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+
+<style>
+    #attn_kont {
+    display: grid;
+    place-items: center; 
+    }
+</style>
+<h1>Self-Attention Mechanism</h1>
+<p>
+    Dla każdego tokenu w sekwencji wejściowej (embeddingu) tworzymy trzy wektory:
+     <span class="highlight">Q (Query - zapytanie, określa na co ma patrzeć ten token), K (Key - klucz, odpowiadający na zapytanie, zawiera informacje dla innych tokenów), 
+    V(Value - warotść, zawiera faktyczną informację)</span>. Dzieje się to poprzez pomnożenie embeddingu przez trzy różne macierze wag 
+    (składające się z parametrów, które są uczone przez sieć).
+</p>
+
+<p>
+    Załóżmy, że mamy wybrany wektor Q danego elementu. Bierzemy dowolny wektor K i obliczamy iloczyn skalarny tych dwóch
+    wektorów. Jeśli te dwa embeddingi są ze sobą związane (istotne dla siebie), wartość tego <span class="highlight">iloczynu skalarnego </span> 
+    jest dużą (dodatnią) liczbą, w przeciwnym razie jest mała (być może ujemna). Warto zobaczyć to w przestrzeni, jeśli mamy
+    dwa wektory "podobnie skierowane", to kąt pomiędzy nimi jest niewielki, czyli cosinus jest duży (bliski 1). 
+    W takiej sytuacji iloczyn skalarny będzie relatywnie duży, co oznacza silne powiązanie między tokenami.
+</p>
+
+<p>
+    Weźmy teraz macierz złożoną z wektorów Q, oraz macierz złożoną z wektorów K. Obie mają wymiary
+    liczba pozycji w sekwencji na wymiar wektorów Q i K (który jest taki sam). Przez dokonanie transpozycji (zamiane wierszy z kolumnami) 
+    macierzy K zmieniamy jej wymiary na: wymiar wektorów K na liczba pozycji w sekwencji. Możemy teraz wykonać mnożenie
+    macierzy - <span class="highlight"> jednej złożonej z wektorów Q i drugiej transponowanej macierzy złożonej z wektorów K </span>  
+    (dokładnie w tej kolejności, mnożenie macierzy nie jest przemienne). W rezultacie otrzymujemy macierz kwadratową o wymiarach liczba pozycji w sekwencji na liczba pozycji w sekwencji. 
+    Otrzymany wynik dla stabilności numerycznej dzielimy przez pierwiastek z wymiaru Q, ponieważ będziemy zaraz aplikować funkcję softmax,
+     która dodatkowo zawyża duże wartości, 
+    a te mniejsze zbliża do 0. 
+</p>
+
+<br/>
+<p>
+    <span class="highlight">WAŻNE! - w powyższym opisie celowo pomijamy wymiar batch oraz wymiar liczby głów (heads), aby uprościć zrozumienie operacji.</span>
+<br/>
+    Kiedy będziemy implementować to w kodzie, tworząc klasę "MultiHeadSelfAttention" będzie ona miała parametr n_heads - ilość głów. 
+    Metoda forward natomiast przyjmie wektor x o shape (B (batch_size), T (wymiar czasu, ilość tokenów w sekwencji wejściowej), 
+    C (wymiar wektora embeddingu)). Każdy pojedynczy wektor Q, K, V będzie miał shape (B, n_heads, T, (C / n_heads)).
+    Dopiero po przemnożeniu macierzy Q × Kᵀ uzyskujemy tensor o shape (B, n_heads, T, T).
+</p>
+
+<p>
+    Musimy pamiętać, że nasz mechanizm nie może "patrzeć w przód", ponieważ tam właśnie jest odpowiedź. Dlatego stosujemy
+    <span class="highlight">maskę - macierz trójkątną dolną </span> (oczywiście kwadratową) o wymiarach takich samych jak attention score. Na głównej 
+    przekątnej i poniżej tej przekątnej są zero, natomiast nad nią są minus nieskończoności. Dodajemy ją do macierzy
+    attention score, dzięki czemu po wykonaniu funkcji softmax wartości będące nad główną przekątną wyzerują się. Zatem
+    nie będą miały znaczenia w procesie.
+</p>
+
+<p>
+    Teraz aplikujemy softmax, wiersz po wierszu. Dzięki temu w każdym wierszu otrzymujemy znormalizowane wartości sumujące się 
+    do jedynki, czyli rozkład prawdopodobieństwa. Na koniec wreszcie mnożymy razy macierz Value.
+</p>
+<p>
+    <span class="highlight">WAŻNE! - </span> shape po pomnożeniu przez Value w naszej implementacji wyniesie (B, T, C), tyle samo co wejściowym.
+    <br/>
+    <br/>
+    Tak właśnie działa pojedyńcza self-attention head (my od razu tworzymy klasę MultiHeadSelfAttention), ale moc tego procesu tkwi w tym, 
+    że może pracować kilka głów jednocześnie.
+</p>
+
+<div id="attn_kont">
+    <img src="../images/attn.png" alt="attn" class="attn">
+</div>
+
+<p>
+    Spójrzmy teraz na powyższy schemat. Składa się on z dwóch głównych części - <span class="highlight">enkodera (po lewej) i dekodera (po prawej) </span>. 
+    Obie te części są powtarzane n-razy. Mając surowe dane tworzymy z nich embeddingi (wektory). Poza tym tworzymy wektory
+    Positional Encoding, aby uwzględnić pozycje tokenu w sekwencji. Jest to kluczowe, ponieważ architektura transformera nie ma wbudowanego pojęcia kolejności. 
+</p>
+<p>
+    Zajmijmy się teraz enkoderem. Tutaj zaczynamy od bloku Multi-Head Attention, ale jeszcze przed tym blokiem mamy
+    strzałkę, która jest połączona bezpośrednio z warstwą normalizacyjną. Jest to <span class="highlight">Residual Connection, 
+    ułatwiające uczenia się zmian względem wejścia</span>. Po pierwszym bloku attention, dodajemy wejście (residual) i przechodzimy przez warstwę Layer Normalization.
+
+    Następnie dane trafiają do niewielkiej sieci typu feed-forward, złożonej z dwóch warstw liniowych rozdzielonych funkcją aktywacyjną ReLU. 
+    Ten blok umożliwia modelowi uczenie się bardziej złożonych, nieliniowych reprezentacji. Na koniec ponownie stosujemy residual connection i warstwę normalizacji.
+</p>
+
+<p>
+    Dekoder również zaczyna się od mechanizmu multi-head attetnion, ale tym razem  <span class="highlight">aplikujemy maskę</span>. Ponownie mamy "Residual Connection" i warstwę
+    normalizacyjną. Dzieje się to dwa razy, potem sieć FF, kolejna normalizacja, przekształcenie liniowe i softmax wrzuca prawdopodobieństwa.
+    <br/>
+    <br/>
+    Warto zwrócić uwagę na połączenie pomiędzy enkoderem a dekoderem. Jest to mechanizm cross-attention, 
+    który pozwala dekoderowi „spojrzeć” na reprezentacje wygenerowane przez enkoder.
+    W naszym modelu nie implementujemy cross-attention - dla uproszczenia skupiamy się wyłącznie na dekoderze.
+</p>
+
+    
+
+
+
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

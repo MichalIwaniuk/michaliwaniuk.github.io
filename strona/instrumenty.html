@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+<h1>Instrumenty</h1>
+
+<p><a href="https://huggingface.co/spaces/MichalIwaniuk/ModelInstrumenty" target="_blank">TU JEST APLIKACJA</a></p>
+
+<p>Dla zrozumienia schematu działania tego programu należy zrozumieć charakterystykę rozszerzenia <b>.wav</b>. Pliki
+    te to tak zwane <b>sygnały czasowe</b>, czyli ciągłe fale dźwiękowe, które są próbkowane w regularnych odstępach
+    czasu. W tym przypadku <b>częstotliwość próbkowania</b> wynosi <b>22050 Hz</b>, co oznacza, że co sekundę mamy <b>22050</b> próbek. 
+    Każda próbka to wartość <b>amplitudy dźwięku</b> w danym momencie. W celu analizy tych sygnałów, przekształcamy je na
+    <b>spektrogramy Mel</b>, które są reprezentacją częstotliwości dźwięku w czasie. <b>Spektrogram Mel</b> to dwuwymiarowa
+    mapa, gdzie jedna oś odpowiada pasmom częstotliwości (skala <b>Mel</b>), a druga oś to upływ czasu. Dzięki temu
+    możemy potraktować dźwięk jak obraz i wykorzystać sztuczną inteligencję do rozpoznawania wzorców 
+    charakterystycznych dla różnych instrumentów.
+</p>
+
+
+<pre class="code-box"><code>
+import os
+import argparse           #Pozwala przekazywać parametry do programu przez linię komend (np. ścieżki do plików)
+import numpy as np        #Umożliwia wygodną pracę z dużymi tabelami i liczbami
+import librosa            #Służy do wczytywania i przetwarzania plików dźwiękowych
+import tensorflow as tf   #Najważniejsza biblioteka do budowania i trenowania sztucznej inteligencji
+from tensorflow.keras import Model
+from tensorflow.keras.layers import (
+    Input,                #Określa, jakiego typu dane będą podawane do sieci
+    Conv2D,               #Warstwa, która "patrzy" na obraz (tu: spektrogram) i wykrywa wzory
+    BatchNormalization,   #Pomaga sieci szybciej i stabilniej się uczyć
+    GlobalAveragePooling2D,#Uśrednia dane, żeby nie trzeba było mieć zawsze takiego samego rozmiaru wejścia
+    Dense                 #Warstwa, która na końcu daje odpowiedź (np. jaki to instrument)
+)
+from tensorflow.keras.callbacks import (
+    ModelCheckpoint,       #Zapisuje najlepszy model podczas treningu, żeby go nie stracić
+    EarlyStopping         #Przerywa trening, jeśli model przestaje się poprawiać
+)
+from sklearn.model_selection import train_test_split  #Dzieli dane na część do nauki i część do sprawdzania
+from sklearn.preprocessing import MultiLabelBinarizer   #Zamienia listę nazw (np. instrumentów) na liczby zrozumiałe dla komputera
+</code></pre>
+
+</body>
+</html>
+<p>
+    W tym kodzie używamy kilku bibliotek, które służą nam do różnych zadań: przede wszystkim do pobierania argumentów z wiersza poleceń,
+    do pracy z tablicami, do wczytywania i obróbki dźwięku, a także do tworzenia i trenowania sieci neuronowych.
+</p>
+<pre class="code-box"><code>
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+</code></pre>
+<p>Tutaj wyłączamy niektóre zaawansowane logi TensorFlow, żeby nie zaśmiecać terminala</p>
+
+<pre class="code-box"><code>
+INSTRUMENTS = []
+</code></pre>
+<p>Ta zmienna będzie przechowywać nazwy instrumentów, które znajdziemy w danych treningowych. 
+    Będzie używana do tworzenia etykiet dla naszego modelu.</p>
+
+<pre class="code-box"><code>
+    try:
+        # librosa.load zwraca dwa elementy: wektor dźwięku y i samą częstotliwość (którą ignorujemy)
+        y, _ = librosa.load(sciezka, sr=sr, duration=czas)
+        # Sprawdzamy, czy wczytany dźwięk ma mniej niż 5 sekund
+        if len(y) < sr * czas:
+            # Jeśli tak, dodajemy zera na koniec (czyli ciszę), żeby było równo 5 sekund
+            y = np.pad(y, (0, sr * czas - len(y)))
+        return y
+    except Exception as e:
+        # Jeśli coś nie wyszło (plik uszkodzony, nie można wczytać), wypisujemy błąd i zwracamy None
+        print("Nie mogę wczytać dźwięku:", sciezka)
+        return None
+</code></pre>
+
+<p>Ta funkcja wczytuje plik .wav i zwraca tablicę z dźwiękiem o dokładnie zadanej długości (5 sekund):</p> 
+<ul> <li><b>Ładuje</b> plik dźwiękowy (.wav) z podanej ścieżki.</li> <li><b>Ustawia</b> częstotliwość próbkowania 
+    na <b>22050 Hz</b> (czyli ile razy na sekundę pobierane są próbki dźwięku).</li> <li><b>Przycina</b> lub 
+        <b>dopełnia</b> tablicę do dokładnie 5 sekund:<br> <ul> <li>Jeśli plik trwa dłużej – obcina go do 5 sekund.
+      </li> <li>Jeśli plik trwa krócej – dokłada ciszę na końcu.</li> </ul> </li> <li><b>Zwraca</b>
+         wektor (tablicę 1D) z danymi dźwiękowymi.</li> <li><b>librosa.load</b> zwraca dwa elementy: wektor dźwięku
+         y i częstotliwość (którą ignorujemy).</li> <li><b>Sprawdza</b>, czy wczytany dźwięk ma mniej niż 5 sekund 
+            i w razie potrzeby dopełnia ciszą.</li> <li><b>Jeśli coś pójdzie nie tak</b> (np. plik jest uszkodzony 
+                lub nie można go wczytać), wypisuje błąd i zwraca None.</li> </ul>
+
+
+   <pre class="code-box"><code>
+def mel_spektrogram(y, sr=22050, n_mels=128):
+
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=n_mels)  # Najpierw obliczamy mel-spektrogram (moc)
+    S_dB = librosa.power_to_db(S, ref=np.max)  # Zamieniamy moc na skalę decybelową (logarytmujemy)
+    return S_dB
+    </code></pre>
+
+<p> Ta funkcja zamienia dźwięk (wektor y) na spektrogram Mel:</p>
+<ul> <li>
+    Robimy spektrogram Mel (podział na 128 pasm częstotliwości).</li>
+   <li> Zamieniamy moc na <b>skalę decybelową</b> (logarytmiczną). Tak lepiej widać różnice.</li>
+   <li> Zwracamy tablicę 2D z wymiarami <b>(pasma, czas)</b>.</li></ul>
+    
+
+<p>Następna funkcja przeszuka folder z danymi treningowymi. Każdy podfolder to nazwa instrumentu, 
+    a w nim są pliki .wav </p>
+ <p>Zwraca X (spektrogramy robione wcześniej) i Y (etykiety (nazwy instrumentów) jako wektory)</p>
+<pre class="code-box"><code>
+ def przygotuj_dane(katalog):
+    global INSTRUMENTS
+    X, Y = [], []
+
+    # Przechodzimy przez nazwy folderów w katalogu głównym
+    for inst in sorted(os.listdir(katalog)):
+        pod = os.path.join(katalog, inst)
+        # Jeśli to nie jest folder, pomijamy plik
+        if not os.path.isdir(pod):
+            continue
+        # Przechodzimy przez pliki w folderze instrumentu
+        for plik in os.listdir(pod):
+            # Bierzemy tylko pliki zakończone .wav
+            if not plik.endswith('.wav'):
+                continue
+            sciezka = os.path.join(pod, plik)
+            y = wczytaj_audio(sciezka)
+            if y is None:
+                continue  # Jeśli wczytanie się nie powiodło, pomijamy
+            S = mel_spektrogram(y)  # Zmieniamy dźwięk na spektrogram Mel
+            # Dodajemy dodatkowy wymiar na "kanał" (Conv2D chce 3 wymiary wejściowe)
+            # Teraz kształt to (pasma, czas, 1)
+            S = S[..., np.newaxis]
+            # Dodajemy spektrogram do listy X
+            X.append(S)
+            # Dodajemy etykietę jako lista [nazwa_instrumentu]
+            Y.append([inst]) </code></pre>
+
+   <p>Tworzymy listę wszystkich unikalnych instrumentów, żeby wiedzieć ile będzie klas. Następnie zamieniamy 
+    listę etykiet (piano, voice, violin i tak dalej) na wektory 0/1. Dalej narzędzie "MultiLabelBinarizer" 
+przekształci je w tablice, gdzie "1" oznacza, że instrument jest obecny.</p>
+<pre class="code-box"><code>
+    # Tworzymy listę wszystkich unikalnych instrumentów   
+INSTRUMENTS = sorted({i for sub in Y for i in sub})
+    mlb = MultiLabelBinarizer(classes=INSTRUMENTS)
+    Y = mlb.fit_transform(Y)
+
+    X = np.array(X)
+    Y = np.array(Y)
+</code></pre>
+
+    <p>Ostatnie 2 linijki kodu zmieniają zmienne X i Y na tablice NumPy, żeby TensorFlow mógł to przyjąć.</p>
+    <p>Na koniec wypisujemy ile próbek wczytaliśmy i jakie instrumenty znaleźliśmy.</p>
+
+<pre class="code-box"><code>
+    print("Wczytałem", len(X), "próbek. Instrumenty:", INSTRUMENTS)
+    return X, Y
+</code></pre>
+
+<p>Ta funkcja tworzy naszą sieć neuronową. 
+Sieć najpierw szuka wzorów w spektrogramie (warstwy konwolucyjne), potem je uśrednia, a na końcu zgaduje, które instrumenty są na nagraniu.
+Ostatnia warstwa (sigmoid) daje osobne prawdopodobieństwo dla każdego instrumentu – każdy może być obecny lub nie.</p>
+
+<pre class="code-box"><code>
+def zbuduj_model(ksztalt, ile_klas):
+    # ksztalt to na przykład (128, czas, 1) – 128 pasm, zmienna długość czasu, jeden kanał
+    wej = Input(shape=ksztalt)
+    # Pierwsza warstwa konwolucyjna uczy się prostych wzorców w spektrogramie
+    x = Conv2D(32, 3, activation='relu')(wej)
+    x = BatchNormalization()(x)  # Normalizujemy, żeby sieć szybciej się uczyła
+    # Druga warstwa konwolucyjna wykrywa większe wzorce
+    x = Conv2D(64, 3, activation='relu')(x)
+    x = BatchNormalization()(x)
+    # Globalne uśrednianie zamienia dowolny obraz (128, czas, 64) na wektor długości 64
+    # Dzięki temu nie musimy przycinać spektrogramu do stałej szerokości
+    x = GlobalAveragePooling2D()(x)
+    # Warstwa wyjściowa: ile_klas neuronów, każdy z sigmoid
+    # Sigmoid zwróci liczbę z przedziału [0,1] – prawdopodobieństwo wystąpienia instrumentu
+    wyj = Dense(ile_klas, activation='sigmoid')(x)
+    return Model(inputs=wej, outputs=wyj)
+</code></pre>    
+
+<p>Główna część programu, która odpala wszystko powyżej:</p>
+<pre class="code-box"><code>
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_dir', default='data/train', help='Folder z danymi treningowymi')
+    parser.add_argument('--batch_size', type=int, default=32, help='Ile próbek na raz w jednej paczce')
+    parser.add_argument('--epochs', type=int, default=150, help='Ile razy pokazać dane całości sieci')
+    parser.add_argument('--model_out', default='models/model.h5', help='Gdzie zapisać wytrenowany model')
+    args = parser.parse_args()
+
+    tf.get_logger().setLevel('ERROR')
+
+    </code></pre>
+    <p> We fragmencie powyżej ustawiliśmy, jakie parametry chcemy przekazać przez linię komend. 
+        Następnie wyłączyliśmy niepotrzebne logi TensorFlow, żeby nie zaśmiecały konsoli.
+    </p>
+    <p></p>
+    <p>Poniżej znajduje się wyjaśnienie kolejnych kroków w kodzie: <ul><li>
+1) Wczytanie wszystkich danych do pamięci</li>
+<li>
+2) Dzielimy dane na treningowe i walidacyjne (10% jako walidacja)</li>
+<li>
+3) Zamykamy to wszystko w obiekcie tf.data.Dataset, które jest wygodne do trenowania</li>
+<li>
+4) Budujemy model i kompilujemy (ustawiamy funkcję straty, optymalizator i metrykę)</li>    
+<li>
+5) Ustawiamy callbacki: </li>
+<li>
+6) Uruchamiamy trening</li>
+<li>
+7) Po zakończeniu treningu zapisujemy ostateczny model</li></ul>
+</p>
+
+
+  <pre class="code-box"><code>
+    # 1
+    X, Y = przygotuj_dane(args.train_dir)
+
+    # 2
+    X_tr, X_val, Y_tr, Y_val = train_test_split(
+        X, Y, test_size=0.1, random_state=42
+    )
+
+    # 3
+    train_ds = (
+        tf.data.Dataset.from_tensor_slices((X_tr, Y_tr))
+        .shuffle(1000)            # Mieszamy kolejność próbek, by sieć się nie uczyła "kolejki"
+        .batch(args.batch_size)   # Grupa próbek, które sieć zobaczy "na raz"
+        .prefetch(tf.data.AUTOTUNE)  # Przygotowuje następną paczkę w tle, by skrócić czas oczekiwania
+    )
+    val_ds = (
+        tf.data.Dataset.from_tensor_slices((X_val, Y_val))
+        .batch(args.batch_size)
+        .prefetch(tf.data.AUTOTUNE)
+    )
+
+    # 4
+    ksztalt = X_tr.shape[1:]   # Kształt pojedynczej próbki, np. (128, czas, 1)
+    ile_klas = Y.shape[1]      # Liczba instrumentów (ile kolumn w Y)
+    model = zbuduj_model(ksztalt, ile_klas)
+    model.compile(
+        loss='binary_crossentropy',  # Funkcja straty dla problemu multi-label
+        optimizer='adam',           # Optymalizator Adam, popularny i prosty w użyciu
+        metrics=['accuracy']        # Dokładność, choć przy multi-label to nie zawsze idealne
+    )
+
+    # 5
+    # - ModelCheckpoint: zapisuje plik modelu, gdy strata walidacyjna jest mniejsza niż wcześniej
+    # - EarlyStopping: zatrzymuje trening, gdy przez 5 epok strata walidacyjna się nie poprawia
+    checkpoint = ModelCheckpoint(
+        args.model_out,         # gdzie zapisać
+        save_best_only=True,     # zapisujemy tylko, gdy jest lepiej
+        monitor='val_loss',      # obserwujemy stratę na zbiorze walidacyjnym
+        mode='min',              # chcemy, aby strata była jak najniższa
+        verbose=1
+    )
+    early = EarlyStopping(
+        monitor='val_loss',      # patrzymy na stratę walidacyjną
+        patience=5,              # jeśli 5 epok z rzędu nie ma poprawy, przerywamy
+        restore_best_weights=True,  # przywracamy najlepsze wagi sprzed przerwania
+        verbose=1
+    )
+
+    # 6
+    model.fit(
+        train_ds,                # dane treningowe
+        validation_data=val_ds,  # dane walidacyjne
+        epochs=args.epochs,      # ile epok
+        callbacks=[checkpoint, early]  # callbacki do zapisu i wczesnego zatrzymania
+    )
+
+    # 7
+    model.save(args.model_out)
+    print("Model zapisany w:", args.model_out)
+    </code></pre>
+
+    
+<p>
+Na końcu programu sprawdzamy, czy ten plik został uruchomiony bezpośrednio (a nie na przykład zaimportowany do innego programu).
+Jeśli tak, wywoływana jest funkcja main(), czyli uruchamiany jest cały proces uczenia sieci neuronowej.
+</p>
+<pre class="code-box"><code>
+def main_wrapper():
+    main()  # to jest po to, żeby nazwy funkcji były czytelniejsze
+
+if __name__ == '__main__':
+    main()
+</code></pre>
+<p>
+To jest standardowy sposób w Pythonie, żeby program uruchamiał się tylko wtedy, gdy faktycznie chcemy go uruchomić, 
+a nie wtedy, gdy jest jedynie dołączany do innego kodu.
+</p>
+<br/>
+<p>
+    <span class="highlight">
+    W ten sposób mamy kompletny program, który wczytuje dane dźwiękowe, przekształca je na spektrogramy Mel, 
+    buduje sieć neuronową i trenuje ją do rozpoznawania instrumentów muzycznych. 
+    Należy pamiętać, że model będzie działał najlepiej, 
+    jeśli dane treningowe będą dobrze zbalansowane i zawierały różnorodne nagrania dla każdego instrumentu. 
+    Mimo to modelowi może być trudno rozróżnić instrumenty, które mają podobne brzmienie lub są nagrywane w różnych warunkach akustycznych. 
+    </span>
+
+</p>
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>

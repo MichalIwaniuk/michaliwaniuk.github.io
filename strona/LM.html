@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="icon" href="../Nlogo1.ico" class="logo">
+    
+    <title>SztucznaIntuicja </title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+            <div class="container">
+    <ul class="menu">
+        <li><a href="/"><img src="../Nlogo.jpg" class="logo"></a></li>
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Projekty</a>
+            <div class="dropdown-content">
+                <a href="/strona/czerniak.html">Czerniak</a>
+                <a href="/strona/instrumenty.html">Instrumenty</a>
+                <a href="/strona/LM.html">Model Językowy</a>
+            </div>
+        </li>
+
+        <li class="dropdown">
+            <a href="#" class="dropbtn">Wiedza</a>
+            <div class="dropdown-content">
+                <a href="/strona/warstwy.html">Warstwy</a>
+                <a href="/strona/eksperyment.html">Złożoność modelu a działanie</a>
+                <a href="/strona/slownik.html">Słownik</a>
+                <a href="/strona/attention.html">Self-Attention</a>
+                <a href="/strona/wzory.html">Funkcje</a>
+            </div>
+        </li>
+        <li><a href="/strona/start.html">Zacznij!</a></li>
+        <li><a href="/strona/data.html">Dane</a></li>
+        <li><a href="/strona/wiecej.html">Co dalej?</a></li>
+    </ul>
+        </div>
+</nav>
+    <div class="content">
+        <main>
+            
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  
+<h1>Model językowy</h1>
+<p>
+    Najprościej mówiąc: modele językowe to bardzo zaawansowane i bardzo wytrenowane <span class="highlight">"przewidywacze słów"</span>. Rzadko jednak 
+    skupiają się ona na słowach, zazwyczaj są to fragmenty słów bądź w prostych modelach pojedyncze litery. Mimo to, na początku
+    warto przyjąć, że chodzi o słowa. Modele uczą się poprzez  <span class="highlight">analizę ogromnych ilości tekstu</span>. 
+    Dzięki temu są w stanie skutecznie przewidywać kolejne fragmenty tekstu. Zastosowania modeli językowych są dziś absolutnie wszędzie, 
+    m.in. w automatyzacji wielu procesów.
+</p>
+<br/>
+<p> 
+  Przez długi czas modele językowe opierały się na klasycznych sieciach neuronowych lub sieciach rekurencyjnych.  Dopiero publikacja
+  pracy "Attention is all you need" zrewolucjonizowała ich działanie i sprawiła, że obecnie są tak rozwinęte. 
+  Stworzymy więc model językowy oparty na mechanizmie self-attention. Będziemy korzystać raczej z angielskiej terminologii
+  i nazw zmiennych, ponieważ ta polska jest dość nieporęczna i nieintuicyjna (jeśli w ogóle istnieje). Przed przeczytaniem 
+  treści tego projektu warto przerobić <a href="\strona\attention.html">self-attention mechanism</a>
+</p>
+<p>Najpierw importujemy biblioteki</p>
+<pre class="code-box"><code>
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import requests
+import math
+</code></pre>
+
+<p>Pobieramy dane, korzystamy z darmowych zasobów biblioteki Gutenberga.</p>
+<pre class="code-box"><code>
+url = "https://www.gutenberg.org/cache/epub/11/pg11.txt"
+text = requests.get(url).text.lower()
+</code></pre>
+
+<p>Pod "chars" przypisujemy posortowaną listę wszystkich znaków występujących w tekście, "vocab_size" to liczba tych znaków.
+"stoi" to słownik przypisujący każdemu znakowi indeks (od 0 do 65), "itos" przypisuje natomiast indeksowi znak. 
+Następnie definiujemy funkcję <span class="highlight">"encode" </span> (tokenizator) za pomocą, której zamieniamy ciąg znaków na dane liczbowe. W naszym przypadku
+używamy bardzo prostego enkodera (każdy znak to jedna liczba), natomiast w ogromnych modelach językowych używa się bardzo
+skomplikowanych, żeby względnie duże fragmenty tekstu kodować za pomocą kilku liczb. Kolejna funkcja <span class="highlight">"decode" </span> 
+zamienia zakodowany ciąg znaków z powrotem na tekst. </p>
+<pre class="code-box"><code>
+chars = sorted(list(set(text)))
+vocab_size = len(chars)
+stoi = {ch: i for i, ch in enumerate(chars)}
+itos = {i: ch for ch, i in stoi.items()}
+encode = lambda s: [stoi[c] for c in s]
+decode = lambda l: ''.join([itos[i] for i in l])
+</code></pre>
+<p>Jako "data"  oznaczamy tensor zawierający zakodowane dane. Dzielimy te dane na treningowe i walidacyjne.
+  Definiujemy <span class="highlight">block_size</span> - jest to  <span class="highlight">maksymalna liczba tokenów, jaką "pamięta"</span>  
+  nasz model oraz batch_size dla sprawniejszego trenowania.
+</p>
+
+<pre class="code-box"><code>
+data = torch.tensor(encode(text), dtype=torch.long)
+train_data = data[:int(0.9*len(data))]
+val_data = data[int(0.9*len(data)):]
+
+block_size = 64
+batch_size = 32
+</code></pre>
+
+Definiujemy funkcję, która pobiera jeden batch. 
+Jako "ix" oznaczamy tensor zawierający batch_size losowych indeksów. Zakres do "len(d) -block_size" gwarantuje, że
+nie wybierzemy takiego indeksu, aby wyjść poza zakres danego zbioru. "(batch_size,)" określa rozmiar
+tensora. Funkcja "stack" łączy tensory z "ix" względem zerowego wymiaru (domyślnie, chociaż można zmienić ten
+parametr). Zwracamy zatem pojedyncze tensory x - wejściowa sekwencja tokenów i y - docelowa sekwencja, przesunięta
+o jeden w prawo, która zwiera kolejny token (ten który próbujemy przewidzieć).
+<pre class="code-box"><code>
+def get_batch(split):
+    d = train_data if split == 'train' else val_data
+    ix = torch.randint(len(d) - block_size, (batch_size,))
+    x = torch.stack([d[i:i+block_size] for i in ix])
+    y = torch.stack([d[i+1:i+block_size+1] for i in ix])
+    return x, y
+</code></pre>
+<p>Teraz będzie dziać się magia - proces bardzo prosty, ale bardzo skuteczny.</p>
+
+<p>
+    Definiujemy klasę <span class="highlight">MultiHeadSelfAttention</span>, dziedziczącą po nn.Module. W konstruktorze  wywołujemy też konstruktor klasy nadrzędnej (nn.Module).
+    Następna linijka "assert embed_dim % n_heads == 0" po prostu sprawdza, czy wymiar wejściowego embeddingu jest podzielny przez liczbe głów, w przeciwnym
+    razie zwracamy błąd, ponieważ każda głowa potrzebuje takiego samego wymiaru. Obliczamy też "head_dim" - wymiarowość pojedyńczej głowy. 
+    <br/>
+    "self.qkv" to warstwa liniowa, która przekształca embeddingi z wejścia w jeden wektor o wymiarze trzykrotnie większym,
+    by potem rozłożyć go na trzy wektory <span class="highlight">q, k i v </span>. Z kolei "self.out_proj" to zwykłe przekształcenie liniowe.
+</p>
+
+<pre class="code-box"><code>
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, embed_dim, n_heads):
+        super().__init__()
+        assert embed_dim % n_heads == 0
+        self.n_heads = n_heads
+        self.head_dim = embed_dim // n_heads
+        self.qkv = nn.Linear(embed_dim, embed_dim * 3)
+        self.out_proj = nn.Linear(embed_dim, embed_dim)
+</code></pre>
+
+<p>W metodzie "forward" rozkładamy wymiary tensora x na <span class="highlight">B (batch size), T (ilość tokenów) i C (wymiar embeddingu)</span>. Następnie 
+przepuszczamy "x" przez warstwę "qkv" i  dzielimy ten tensor na trzy, każdy o shape (B,T,C) (podział następuje względem ostatniego wymiaru, 
+który w "x" jest trzykrotnością "embed_dim"). Fragment "q.view(B, T, self.n_heads, self.head_dim)" rozbija ostatni wymiar 
+q (czyli C równy "embed_dim") na n.heads i head_dim, co jest możliwe ponieważ ich iloczyn jest równy "embed_dim". Potem zamieniamy "T"
+z "n_heads" za pomocą transpozycji. Podobnie robimy z "k" i "v".</p>
+
+<p>
+    Dalej mamy już implementacje self-attention. Jako "attn_scores" oznaczamy  
+    <span class="highlight">iloczyn skalarny q i transponowanego k </span> podzielony
+    przez pierwiastek kwadratowy z wymiaru pojedyńczej głowy. Definiujemy także macierz maski (aby "przyciąć przyszłość"), za pomocą funkcji
+    "torch.trill", która tworzy macierz dolnotrójkątną. Ponieważ "attn_scores" jest tensorem czterowymiarowym, dwukrotnie wykonujemy na tej 
+    macierzy (.unsqueeze(0)), aby dwukrotnie dodać z przodu dwa wymiary. Ostatecznie shape "mask" to "(1,1,T,T)" 
+    Potem wykorzystujemy wbudowaną funkcję PyTorcha <span class="highlight">(masked_fill)</span>, która zera zamienia na minus nieskończoności. W kolejnej linijce wykonujemy softmax
+    względem ostatniego wymiaru. Wreszcie możemy obliczyć iloczyn skalarny "attn_weights" i wektora "v". 
+</p>
+
+<p>
+    Zajmijmy się ostatnimi dwiami linijkami. Najpierw shape obliczonego tensora zamieniamy na "(B, T, n_heads, head_dim)". Następnie funkcja
+    "contiguous" zapewnia, że dane są zapisane w jedenym ciągłym bloku. Dzięki temu możemy 
+    <span class="highlight">zcalić z powrotem n_heads i head_dim na C (równe embed_dim)</span>.
+    Finalnie zwracamy dane po przejściu przez warstwę "out_proj", która wymiesza wyjścia ze wszystkich głów.
+</p>
+
+
+<pre class="code-box"><code>
+    def forward(self, x):
+        B, T, C = x.size() 
+        qkv = self.qkv(x)
+        q, k, v = qkv.chunk(3, dim=-1)
+
+        q = q.view(B, T, self.n_heads, self.head_dim).transpose(1, 2)
+        k = k.view(B, T, self.n_heads, self.head_dim).transpose(1, 2)
+        v = v.view(B, T, self.n_heads, self.head_dim).transpose(1, 2)
+
+        attn_scores = (q @ k.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        mask = torch.tril(torch.ones(T, T, device=x.device)).unsqueeze(0).unsqueeze(0)
+        attn_scores = attn_scores.masked_fill(mask == 0, float('-inf'))
+        attn_weights = F.softmax(attn_scores, dim=-1)
+        out = attn_weights @ v
+
+        out = out.transpose(1, 2).contiguous().view(B, T, C)
+        return self.out_proj(out)
+</code></pre>
+<p>Teraz tworzymy <span class="highlight">blok transformera</span>. W konstruktorze mamy kilka warstw nn.ln1 (normalizacja), attn (implementacja zdefiniowanej klasy), ln2 
+(kolejna warstwa normalizacyjna) oraz ff (<span class="highlight">sieć feed-forward</span> złożona z jednej warstwy linowej, funkcji aktywacji Relu i kolejnej warstwy liniowej).</p> 
+
+<p>
+    W metodzie "forward" przyjmujemy tensor o shape "(batch_size, block_size, embed_dim)". W pierwszej linijce, po wykonaniu normalizacji, przekazujemy 
+    ten tensor do mechanizmu. Na koniec dodajemy otrzymaną wartość do wejściowego tensora, to tzw. Residual Connection. Drugi podblok dostaje
+     tensor "x", będący już wynikiem poprzednich przekształceń. Po kolejnej normalizacji przechodzi przez sieć Feed Forward i ponownie aplikuje Residual Connection. 
+     Ostatecznie dostajemy x o takim samym shape jak wejściowy. Jest to zgodne ze strukturą dekodera opisaną w zakładce self-attention.
+</p>
+<pre class="code-box"><code>
+class TransformerBlock(nn.Module):
+    def __init__(self, embed_dim, n_heads):
+        super().__init__()
+        self.ln1 = nn.LayerNorm(embed_dim)
+        self.attn = MultiHeadSelfAttention(embed_dim, n_heads)
+        self.ln2 = nn.LayerNorm(embed_dim)
+        self.ff = nn.Sequential(
+            nn.Linear(embed_dim, 4 * embed_dim),
+            nn.ReLU(),
+            nn.Linear(4 * embed_dim, embed_dim)
+        )
+
+    def forward(self, x):
+        x = x + self.attn(self.ln1(x))
+        x = x + self.ff(self.ln2(x))
+        return x
+
+</code></pre>
+
+Teraz, z wcześniej zdefiniowanych komponentów, będziemy składać cały model. W konstruktorze zaczynamy od definicji "self.token_embed ", który będzie 
+przekształcać każdy <span class="highlight">znak w wektor</span>. Potem tworzymy<span class="highlight">embedinng pozycyjny</span> (aby zapisać informacje o pozycji tokenu)
+ i <span class="highlight">sekwencję bloków transformera</span> (przekształcenia z tej sekwecnji będą wykonane jedno po drugim). 
+ Na koniec warstwa normalizacyjna i "output", aby przygotować dane do wyjścia - generując logity.
+
+<pre class="code-box"><code>
+class SimpleTransformerLM(nn.Module):
+    def __init__(self, vocab_size, embed_dim, seq_len, n_heads=4, n_layers=4):
+        super().__init__()
+        self.token_embed = nn.Embedding(vocab_size, embed_dim)
+        self.pos_embed = nn.Embedding(seq_len, embed_dim)
+        self.blocks = nn.Sequential(
+            *[TransformerBlock(embed_dim, n_heads) for _ in range(n_layers)]
+        )
+        self.ln_final = nn.LayerNorm(embed_dim)
+        self.output = nn.Linear(embed_dim, vocab_size)
+
+</code></pre>
+<p>
+Tym razem przyjmujemy tensor dwuwymiarowy, rozkładamy na (B,T). Zaczynamy oczywiście od przekształcenia wejściowych
+w wektory (embeddingi), shape to (B, T, embed_dim). Fragment "torch.arange(T, device=x.device)" po prostu tworzy tensor [0, 1, 2, ..., T-1] z indeksami
+pozycji w sekwencji na odpowiednim device. Potem wykonujemy na nim ".unsqueeze(0)", aby dodać dodatkowy wymiar na początku, czyli
+z shape [T] powstaje [1,T]. Tak definiujemy <span class="highlight">embedding pozycyjny</span>. 
+</p>
+<p>
+"pos_emb = self.pos_embed(pos)" spowoduje zmiane shape na [1, T, embed_dim]. Następpnie dokonujemy
+połączenia "tok_emb" i "pos_emb", co sprawi, że x będzie miał shape [B, T, embed_dim]. To dodawanie jest możliwe w PyTorchu
+ dzięki broadcastingowi — <span class="highlight">rozciągamy wymiar pierwszy wymiar</span> tensora pos_emb.
+</p>
+<p>
+    Trzecia od końca linijka przetwarza tensor x przez bloki zawierające <span class="highlight">wiele instacji</span>  
+    "TransformerBlock", co wydobywa z sekwencji złożone cechy (nie zmienia shape). Następnie aplikujemy normalizacje i zwracamy wynik.
+</p>
+
+<pre class="code-box"><code>
+    def forward(self, x):
+        B, T = x.size()
+        tok_emb = self.token_embed(x)
+        pos = torch.arange(T, device=x.device).unsqueeze(0)
+        pos_emb = self.pos_embed(pos)
+        x = tok_emb + pos_emb
+        x = self.blocks(x)
+        x = self.ln_final(x)
+        return self.output(x)
+
+</code></pre>
+
+<p>Piszemy "device agnostic code" oraz tworzymy obiekt transformera modelu przeniesiony na device. Podajemy 5 ważnych parametrów
+    <span class="highlight">("vocab_size" - liczba unikalnych znaków, "embed_dim" - trzeci wymiar tensora z danymi, "seq_len" - długość bloku, "n_heads" - ilość 
+głów w naszy mechanizmie (istotne dla wydajności), "n_layers" - ilość bloków transformera)</span>
+. </p>
+
+<p>Potem klasycznie definiujemy optymalizator (AdamW) i funkcje straty. </p>
+
+<pre class="code-box"><code>
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+model = SimpleTransformerLM(vocab_size, embed_dim=128, seq_len=block_size, n_heads=4, n_layers=4).to(device)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+loss_fn = nn.CrossEntropyLoss()
+</code></pre>
+
+
+<p>Pętla treningowa: po wyłączeniu trybu trenowania pobieramy batch do trenowania i zmieniamy device danych treningowych i walidacynych.
+  Jako "logits" oznaczamy surową predykcje modelu. W następnej linijce obliczamy strate, warto zwrócić uwagę, że 
+  "logits" miało shape ("batch_size", "block_size", "vocab_size")
+   więc "view(-1, vocab_size)" zmieni  ten shape na ["batch_size*block_size", "vocab_size"], co jest oczekiwane przes funkcję straty. To samo robimy z tensorem zawierającym 
+   sekwencje docelowe.
+  Dalej dzieje się <span class="highlight">typowy pytorchowy proces uczenia</span>.
+</p>
+
+<pre class="code-box"><code>
+for step in range(1000):
+    model.train()
+    xb, yb = get_batch('train')
+    xb, yb = xb.to(device), yb.to(device)
+    logits = model(xb)
+    loss = loss_fn(logits.view(-1, vocab_size), yb.view(-1))
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    if step % 100 == 0:
+        print(f"Step {step}: train loss = {loss.item():.4f}")
+</code></pre>
+
+Zapisujemy model. Potem dla testu wygenerujemy trochę znaków. Wyłączamy gradienty i definiujemy funkcje "generate". Po wyłączeniu trybu
+walidacji (tak zawsze robimy, jeśli chcemy robić predykcje). Funkcja przyjmuje "start_text",  który kodujemy i zamieniamy na tensor na odpowiednim device. 
+Już wewnątrz pętli bierzemy ostatnie "block_size" znaków (jeśli tekst jest dłuższy, wcześniejsze tokeny są pomijane, ponieważ model nie ma „pamięci” poza zadeklarowaną długość bloku). 
+Obliczamy surowe predykcje modelu jako "logits", ich shape to (1, block_size, vocab_size). Przy czym jeśli w "start_text" jest mniej znaków niż 
+wynosi "block_size", to ten drugi wymiar wynosi "start_text".
+ Potem obliczamy prawdopodbieństwa za pomocą funkcji softmax. Przy wyznaczaniu kolejnego tokenu 
+(znaku), korzystamy z <span class="highlight">torch.multinomial - wybieramy losowo zgodnie z rozkładem – zamiast zawsze brać token z najwyższym prawdopodobieństwem. 
+</span>. W kolejnej linijce korzystamy z "torch.cat", czyli doklejamy wzdłuż pierwszego wymiaru nowy wygenerowany token.
+Zwracamy wygenerowaną sekwencję tokenów, zamienioną na listę i przekonwertowaną na znaki. Ciekawe co otrzymamy po wywołaniu funkcji? :)
+
+<pre class="code-box"><code>
+torch.save(model.state_dict(), "prostyTransformer.pth")
+
+@torch.no_grad()
+def generate(model, start_text, max_new_tokens=300):
+    model.eval()
+    x = torch.tensor([encode(start_text)], dtype=torch.long).to(device)
+    for _ in range(max_new_tokens):
+        x_cond = x[:, -block_size:]
+        logits = model(x_cond)
+        probs = F.softmax(logits[:, -1, :], dim=-1)
+        next_token = torch.multinomial(probs, num_samples=1)
+        x = torch.cat([x, next_token], dim=1)
+    return decode(x[0].tolist())
+
+print("\n=== Generated Text ===\n")
+print(generate(model, "alice ", max_new_tokens=500))
+</code></pre>
+<p>
+     <span class="highlight">Niestety, modelowi średnio idzie reprodukowanie "Alicji w Krainie Czarów". Było to oczywiste, mieliśmy bardzo
+    mały zbiór do treningu, a przecież moc modeli językowych tkwi właśnie w ilości przerobionych informacji. Mimo to udało
+    nam się zaimplementować i zrozumieć działanie głównego mechanizmu działania nowoczesnych modeli językowych.</span>
+    
+</p>
+
+
+
+
+            
+        </main> 
+    </div>
+    
+    <footer>
+        &copy; 2025 SztucznaIntuicja Michał Iwaniuk Rafał Karwowski
+    </footer>
+    
+             
+
+</body>
+</html>
